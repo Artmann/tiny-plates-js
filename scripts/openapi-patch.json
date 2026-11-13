@@ -1,0 +1,11 @@
+[
+  {
+    "op": "replace",
+    "path": "/components/schemas/Nutrition/properties/micronutrients",
+    "value": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/components/schemas/NutrientValue" },
+      "propertyNames": { "$ref": "#/components/schemas/Slug" }
+    }
+  }
+]

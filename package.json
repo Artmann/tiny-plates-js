@@ -1,11 +1,36 @@
 {
   "name": "tiny-plates",
-  "module": "src/index.ts",
+  "version": "0.1.0",
+  "description": "Clients for the Tiny Plates recipe API, with a plain Promise client and an Effect client.",
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./effect": "./src/effect/index.ts"
+  },
+  "files": [
+    "src",
+    "!src/**/*.test.ts"
+  ],
+  "scripts": {
+    "generate": "bun scripts/generate.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit -p ."
+  },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@effect/openapi-generator": "4.1.4",
+    "@types/bun": "latest",
+    "effect": "4.1.4"
   },
   "peerDependencies": {
+    "effect": "^4.1.4",
     "typescript": "^7"
+  },
+  "peerDependenciesMeta": {
+    "effect": {
+      "optional": true
+    },
+    "typescript": {
+      "optional": true
+    }
   }
 }
