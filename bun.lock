@@ -7,6 +7,7 @@
       "devDependencies": {
         "@arethetypeswrong/cli": "0.18.5",
         "@effect/openapi-generator": "4.1.4",
+        "@effect/platform-node": "4.1.4",
         "@types/bun": "latest",
         "effect": "4.1.4",
         "publint": "0.3.25",

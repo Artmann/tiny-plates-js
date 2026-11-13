@@ -1,9 +1,10 @@
 {
   "name": "tiny-plates",
   "version": "0.1.0",
-  "description": "Clients for the Tiny Plates recipe API, with a plain Promise client and an Effect client.",
+  "description": "Clients for the Tiny Plates recipe API, with a plain Promise client, an Effect client and a command line tool.",
   "keywords": [
     "api-client",
+    "cli",
     "cooking",
     "effect",
     "ingredients",
@@ -21,6 +22,9 @@
   "license": "MIT",
   "author": "Christoffer Artmann",
   "type": "module",
+  "bin": {
+    "tiny-plates": "./dist/cli.mjs"
+  },
   "sideEffects": false,
   "exports": {
     ".": {
@@ -58,6 +62,7 @@
   },
   "scripts": {
     "build": "tsdown",
+    "cli": "bun src/cli/main.ts",
     "check:package": "publint --strict && attw --pack . --profile node16",
     "generate": "bun scripts/generate.ts",
     "prepublishOnly": "bun run build",
@@ -67,6 +72,7 @@
   "devDependencies": {
     "@arethetypeswrong/cli": "0.18.5",
     "@effect/openapi-generator": "4.1.4",
+    "@effect/platform-node": "4.1.4",
     "@types/bun": "latest",
     "effect": "4.1.4",
     "publint": "0.3.25",

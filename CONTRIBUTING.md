@@ -19,7 +19,7 @@ None of the tests call the real API, so you don't need an API key to work on the
 ```bash
 bun test                  # run the tests
 bun run typecheck         # type check everything, tests included
-bun run build             # build ES module and CommonJS output, with types, into dist
+bun run build             # build ES module and CommonJS output, with types, and the CLI into dist
 bun run check:package     # check that the built package resolves for import and require
 bun run generate          # regenerate src/generated from openapi.json
 bun run generate --fetch  # download the latest spec, then regenerate
@@ -28,6 +28,8 @@ bun run generate --fetch  # download the latest spec, then regenerate
 Run `bun test` and `bun run typecheck` before you open a pull request. CI runs both, the build and the package check on every pull request.
 
 The package is published as compiled JavaScript from `dist`, so it works in Node without a TypeScript loader. [tsdown](https://tsdown.dev) builds each entry point twice, as an ES module (`.js` and `.d.ts`) and as CommonJS (`.cjs` and `.d.cts`), and `exports` in `package.json` points `import` and `require` at the right files. `tsdown.config.ts` sets the entry points and `tsconfig.build.json` sets the compiler options. It leaves out Bun's types, so the build fails if library code uses anything Bun-only. To try the package the way users get it, run `npm pack` and install the tarball in another project.
+
+The CLI is built separately, as one ES module file at `dist/cli.mjs` with Effect and `@effect/platform-node` bundled in. That way `npx tiny-plates` works without installing anything else, and the library itself keeps no runtime dependencies. To try it during development, run `bun cli search carbonara`. Arguments after `bun cli` go straight to the command, so `bun cli login` and `bun cli recipe carbonara --servings 4` work too.
 
 ## How the code is laid out
 
@@ -38,6 +40,7 @@ src/
   index.ts            the plain client's public exports (tiny-plates)
   client/             the plain client: methods, transport and error classes
   effect/             the Effect client (tiny-plates/effect)
+  cli/                the tiny-plates command, built on the Effect client and effect/cli
   core/               shared by both: parameters and error mapping
   generated/          generated from the spec, never edited by hand
 dist/                 the build output that gets published, not committed
@@ -49,6 +52,20 @@ The two clients share everything that isn't specific to Promises or Effect:
 - `src/core/errors.ts` turns an error response from the API into one of a few failures, grouped by what the caller can do about them. It also holds the messages for failures the API never sees, like timeouts.
 
 The plain client makes its own `fetch` calls, and its responses are typed but not checked at runtime. The Effect client is built on the generated `HttpApi` definition, so it checks every response against the schema.
+
+## The command line tool
+
+The `tiny-plates` command lives in `src/cli` and uses the Effect client:
+
+- `main.ts` is the entry point. It provides the HTTP client, the browser and the Node services, and runs the command.
+- `commands.ts` defines every command and its flags with `effect/cli`. Each command makes one request through the `request` helper, which picks the credential, shows the spinner and prints the response.
+- `format.ts` turns each response into text. The functions are pure and take a `Style`, so they can be tested without a terminal.
+- `terminal.ts` holds the colours and the spinner. Both turn off when the output isn't a terminal or `NO_COLOR` is set.
+- `login.ts` signs in with OAuth in the browser. It registers a client, opens the browser, waits on 127.0.0.1 for the code, and saves the tokens in the user's config folder.
+
+To add a command for a new endpoint, add it in `commands.ts`, add a formatter in `format.ts`, and add the command to `Command.withSubcommands` in alphabetical order. Then add a row to the commands table in the README.
+
+The tests in `src/cli/commands.test.ts` run whole commands against a mocked `fetch` and a fake browser, with a temporary config folder, so they never touch your real sign-in.
 
 ## The spec and the generated code
 
@@ -76,6 +93,7 @@ A new endpoint goes into both clients, with the same name and parameters:
 3. Add the method to `createClient` in `src/client/client.ts`.
 4. Add it to `TinyPlatesService` and the service in `src/effect/TinyPlates.ts`. List only the errors the endpoint can return in its error type.
 5. Add tests for both clients and a row to the method table in the README, with a link to the endpoint's page in the [docs](https://www.tinyplates.dev/docs).
+6. Add a command for it. See [The command line tool](#the-command-line-tool).
 
 ## Errors
 
@@ -108,7 +126,7 @@ Tests live next to the code they test, as `*.test.ts`, and run with `bun test`.
 
 ## Commits and pull requests
 
-Commit messages follow [Conventional Commits](https://www.conventionalcommits.org). The scope names the part of the library you changed, such as `client`, `effect`, `errors`, `parameters`, `generator` or `docs`:
+Commit messages follow [Conventional Commits](https://www.conventionalcommits.org). The scope names the part of the library you changed, such as `cli`, `client`, `effect`, `errors`, `parameters`, `generator` or `docs`:
 
 ```
 feat(effect): Add a stream method for search results
