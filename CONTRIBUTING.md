@@ -19,14 +19,15 @@ None of the tests call the real API, so you don't need an API key to work on the
 ```bash
 bun test                  # run the tests
 bun run typecheck         # type check everything, tests included
-bun run build             # compile src to JavaScript and type declarations in dist
+bun run build             # build ES module and CommonJS output, with types, into dist
+bun run check:package     # check that the built package resolves for import and require
 bun run generate          # regenerate src/generated from openapi.json
 bun run generate --fetch  # download the latest spec, then regenerate
 ```
 
-Run `bun test` and `bun run typecheck` before you open a pull request. CI runs both, and the build, on every pull request.
+Run `bun test` and `bun run typecheck` before you open a pull request. CI runs both, the build and the package check on every pull request.
 
-The package is published as compiled JavaScript from `dist`, so it works in Node without a TypeScript loader. `tsconfig.build.json` controls the build. It leaves out Bun's types, so the build fails if library code uses anything Bun-only. To try the package the way users get it, run `npm pack` and install the tarball in another project.
+The package is published as compiled JavaScript from `dist`, so it works in Node without a TypeScript loader. [tsdown](https://tsdown.dev) builds each entry point twice, as an ES module (`.js` and `.d.ts`) and as CommonJS (`.cjs` and `.d.cts`), and `exports` in `package.json` points `import` and `require` at the right files. `tsdown.config.ts` sets the entry points and `tsconfig.build.json` sets the compiler options. It leaves out Bun's types, so the build fails if library code uses anything Bun-only. To try the package the way users get it, run `npm pack` and install the tarball in another project.
 
 ## How the code is laid out
 
