@@ -7,13 +7,15 @@ The package has two clients with the same methods and errors:
 - A plain client that returns promises. It has no runtime dependencies and works in Node 20 or later, Bun, and anywhere else with `fetch`.
 - An [Effect](https://effect.website) client, with typed errors per endpoint and responses checked against the schema.
 
+It also has a `tiny-plates` command for the terminal. See [Command line](#command-line).
+
 The package works with both `import` and `require`. The Effect client loads `effect`, which is ES module only, so using it from CommonJS needs Node 20.19 or later.
 
 Read the [Tiny Plates docs](https://www.tinyplates.dev/docs) for what each endpoint returns and how filtering works.
 
 ## Get started
 
-You need an API key. [Sign up](https://www.tinyplates.dev/sign-up) to create one. A free key comes with 50 requests a day. See [Authentication](https://www.tinyplates.dev/docs/authentication) for how keys work.
+You need an API key. [Sign up](https://www.tinyplates.dev/sign-up) to create one. A free key comes with 50 requests a day. See [Authentication](https://www.tinyplates.dev/docs/authentication) for how keys work. The command line tool can also [sign in](#sign-in) in your browser instead.
 
 Install the package:
 
@@ -205,6 +207,98 @@ The Effect client differs from the plain one in a few ways:
 - Errors are tagged values in the error channel. Each method lists only the errors its endpoint can return, so `Effect.catchTag` only offers the ones that can happen.
 - Every response is checked against the schema. A response that doesn't match fails with `UnexpectedResponseError`.
 - Paged lists have `stream` instead of `iterate`, and return a `Stream`.
+
+## Command line
+
+The package comes with a `tiny-plates` command that can do everything the clients can. It needs Node 20 or later. Run it with `npx`, without installing anything:
+
+```bash
+npx tiny-plates search carbonara
+```
+
+Or install it once and use `tiny-plates` directly:
+
+```bash
+npm install --global tiny-plates
+tiny-plates popular
+```
+
+### Sign in
+
+```bash
+tiny-plates login
+```
+
+`login` opens Tiny Plates in your browser. Once you sign in, the command saves your sign-in in `~/.config/tiny-plates/credentials.json` (`%APPDATA%\tiny-plates` on Windows) and uses it for every request. It renews the sign-in by itself, so you only sign in again after `logout` or a long break. Requests count against your account's limits, the same as your API keys.
+
+If the browser doesn't open, the command prints the link so you can open it yourself. It waits five minutes for you to sign in.
+
+You can use an API key instead, for example in scripts and CI. Set `TINY_PLATES_API_KEY` or pass `--api-key`. A key wins over a saved sign-in.
+
+### Examples
+
+```bash
+tiny-plates search chocolate cake --without eggs --limit 5
+tiny-plates recipe carbonara --servings 4 --units metric
+tiny-plates pantry egg tomato onion --max-missing 1 --without milk
+tiny-plates shopping-list carbonara:4 caesar-salad
+tiny-plates substitutions buttermilk
+tiny-plates recipes --cuisine italian --diet vegetarian --max-total-minutes 30
+```
+
+Lists of recipes show the title, a line about the recipe and its id. Pass the id to `recipe` to see the whole recipe:
+
+```
+$ tiny-plates search carbonara --limit 2
+1. Spaghetti Carbonara Recipe
+   Italian · Dinner · 30 min · Serves 4 · ★ 4.8 (58)
+   69e234f8d0295ac8a90122c0
+
+2. Brussels Sprouts Carbonara
+   American · Dinner · 25 min · Serves 6 · ★ 5.0 (9)
+   69e22e8ed0295ac8a9011fef
+
+Run tiny-plates recipe <id> to see a recipe.
+```
+
+### Commands
+
+| Command | What it does | Flags |
+| --- | --- | --- |
+| `login` | Sign in in your browser, instead of using an API key. | |
+| `logout` | Sign out and forget the saved sign-in. | |
+| `search <query>` | Search recipes by text. | `--fields`, `--language`, `--limit`, `--without` |
+| `popular` | The most popular recipes. | `--language`, `--limit`, `--offset` |
+| `recipe <id>` | One recipe, with its ingredients and steps. | `--servings`, `--units metric\|imperial` |
+| `recipes` | Filter every recipe by cuisine, diet, time, nutrition and more. Business plan only. | `--category`, `--course`, `--cuisine`, `--diet`, `--equipment`, `--exclude-ingredients`, `--ingredient`, `--ingredients`, `--language`, `--limit`, `--max-calories`, `--max-cook-minutes`, `--max-sodium`, `--max-total-minutes`, `--min-fiber`, `--min-protein`, `--nutrition`, `--offset`, `--time`, `--without` |
+| `pantry <ingredients...>` | Recipes ranked by how much of them your pantry covers. | `--language`, `--limit`, `--max-missing`, `--offset`, `--no-staples`, `--without` |
+| `shopping-list <recipes...>` | One shopping list for several recipes, grouped by aisle. Write `id:servings` to scale a recipe. | |
+| `substitutions <ingredients...>` | What to use instead of an ingredient. | |
+| `resolve <names...>` | Turn ingredient names, in any language, into ingredient ids. | |
+| `ingredient <id>` | One ingredient. | |
+| `pairings <id>` | Ingredients that go well with this one. | `--limit`, `--staples` |
+| `ingredients` | Every ingredient. Business plan only. | `--limit` |
+| `vocabularies` | The values you can filter on, such as cuisines, diets and allergens. | |
+| `status` | How many recipes and sites the catalogue has. | |
+| `health` | Whether the API is up. Needs no API key. | |
+
+Every command also takes `--api-key` and `--json`. Run `tiny-plates <command> --help` to see what each flag does, with examples. `vocabularies` lists the values that flags like `--cuisine`, `--diet` and `--without` accept.
+
+Flags that take a list, like `--without`, take comma-separated values or the flag more than once, so `--without milk,peanuts` and `--without milk --without peanuts` are the same.
+
+Paged commands (`popular`, `pantry` and `recipes`) say how many results there are and which `--offset` shows the next page.
+
+### Output
+
+Add `--json` to any command to print the API response as JSON instead of text, for example to pipe it into `jq`:
+
+```bash
+tiny-plates search carbonara --json | jq '.results[].title'
+```
+
+In a terminal, the command uses colours and shows a spinner while it waits. When you pipe the output, or set `NO_COLOR`, it prints plain text.
+
+When a request fails, the command prints what went wrong and what to do about it, and exits with status 1.
 
 ## Links
 
