@@ -7,6 +7,8 @@ The package has two clients with the same methods and errors:
 - A plain client that returns promises. It has no runtime dependencies and works in Node 20 or later, Bun, and anywhere else with `fetch`.
 - An [Effect](https://effect.website) client, with typed errors per endpoint and responses checked against the schema.
 
+The package works with both `import` and `require`. The Effect client loads `effect`, which is ES module only, so using it from CommonJS needs Node 20.19 or later.
+
 Read the [Tiny Plates docs](https://www.tinyplates.dev/docs) for what each endpoint returns and how filtering works.
 
 ## Get started
