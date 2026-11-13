@@ -216,6 +216,8 @@ The package comes with a `tiny-plates` command that can do everything the client
 npx tiny-plates search carbonara
 ```
 
+![A terminal showing ten recipes found by the tiny-plates search command, each with its title, cuisine, course, time, servings, rating and id.](docs/cli-search.png)
+
 Or install it once and use `tiny-plates` directly:
 
 ```bash
