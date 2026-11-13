@@ -1,6 +1,6 @@
 {
   "name": "tiny-plates",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Clients for the Tiny Plates recipe API, with a plain Promise client, an Effect client and a command line tool.",
   "keywords": [
     "api-client",
