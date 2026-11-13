@@ -1,35 +1,64 @@
 {
   "name": "tiny-plates",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "Clients for the Tiny Plates recipe API, with a plain Promise client and an Effect client.",
+  "keywords": [
+    "api-client",
+    "cooking",
+    "effect",
+    "ingredients",
+    "recipes",
+    "tiny-plates"
+  ],
+  "homepage": "https://www.tinyplates.dev/docs",
+  "bugs": {
+    "url": "https://github.com/Artmann/tiny-plates-js/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Artmann/tiny-plates-js.git"
+  },
+  "license": "MIT",
+  "author": "Christoffer Artmann",
   "type": "module",
+  "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts",
-    "./effect": "./src/effect/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./effect": {
+      "types": "./dist/effect/index.d.ts",
+      "default": "./dist/effect/index.js"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
+    "dist",
     "src",
     "!src/**/*.test.ts"
   ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "generate": "bun scripts/generate.ts",
+    "prepublishOnly": "bun run build",
     "test": "bun test",
     "typecheck": "tsc --noEmit -p ."
   },
   "devDependencies": {
     "@effect/openapi-generator": "4.1.4",
     "@types/bun": "latest",
-    "effect": "4.1.4"
+    "effect": "4.1.4",
+    "typescript": "^7"
   },
   "peerDependencies": {
-    "effect": "^4.1.4",
-    "typescript": "^7"
+    "effect": "^4.1.4"
   },
   "peerDependenciesMeta": {
     "effect": {
-      "optional": true
-    },
-    "typescript": {
       "optional": true
     }
   }

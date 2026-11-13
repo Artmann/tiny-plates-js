@@ -1,0 +1,21 @@
+{
+  // Compiles src to JavaScript and type declarations in dist for publishing.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "allowJs": false,
+    "declaration": true,
+    "declarationMap": true,
+    // The client only needs fetch, AbortSignal and timers, which every runtime
+    // it targets has. Bun's types are left out so nothing Bun-only slips in.
+    "lib": ["ESNext", "DOM"],
+    "module": "ESNext",
+    "noEmit": false,
+    "outDir": "dist",
+    "rewriteRelativeImportExtensions": true,
+    "rootDir": "src",
+    "sourceMap": true,
+    "types": []
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
+}
