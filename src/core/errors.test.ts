@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import spec from '../../openapi.json'
-import { apiErrorKinds, clientMessages, readApiFailure } from './errors.ts'
+import { apiErrorKinds, clientMessages, readApiFailure, readRetryAfter } from './errors.ts'
 
 // Every `code` enum value anywhere in the spec.
 function specErrorCodes() {
@@ -20,6 +20,14 @@ function specErrorCodes() {
 }
 
 describe('apiErrorKinds', () => {
+  test('has no codes the spec dropped', () => {
+    const extra = Object.keys(apiErrorKinds).filter((code) => {
+      return !specErrorCodes().includes(code)
+    })
+
+    expect(extra).toEqual([])
+  })
+
   test('maps every error code in the spec', () => {
     const unmapped = specErrorCodes().filter((code) => {
       return !Object.hasOwn(apiErrorKinds, code)
@@ -36,25 +44,18 @@ describe('readApiFailure', () => {
     expect(failure).toEqual({ code: 'invalid_api_key', kind: 'authentication', message: 'The API key is not valid.', status: 401 })
   })
 
-  test('reads a rate limit error with its window', () => {
-    const daily = readApiFailure({ error: { code: 'daily_limit_reached', message: 'Daily limit reached.' } })
-    const weekly = readApiFailure({ error: { code: 'weekly_allowance_exceeded', message: 'Weekly allowance used.' } })
+  test('reads a rate limit error with its window and Retry-After', () => {
+    const daily = readApiFailure({ error: { code: 'daily_limit_reached', message: 'Daily limit reached.' } }, { retryAfter: '3600' })
+    const weekly = readApiFailure({ error: { code: 'weekly_limit_reached', message: 'Weekly limit reached.' } }, { retryAfter: null })
 
-    expect(daily).toEqual({ code: 'daily_limit_reached', kind: 'rate_limit', message: 'Daily limit reached.', status: 429, window: 'daily' })
-    expect(weekly).toEqual({ code: 'weekly_allowance_exceeded', kind: 'rate_limit', message: 'Weekly allowance used.', status: 429, window: 'weekly' })
+    expect(daily).toEqual({ code: 'daily_limit_reached', kind: 'rate_limit', message: 'Daily limit reached.', retryAfter: 3600, status: 429, window: 'daily' })
+    expect(weekly).toEqual({ code: 'weekly_limit_reached', kind: 'rate_limit', message: 'Weekly limit reached.', retryAfter: undefined, status: 429, window: 'weekly' })
   })
 
-  test('reads a decode error with its issues', () => {
-    const issues = [{ _tag: 'Type' as const, message: 'Expected a number', path: ['limit'] }]
-    const failure = readApiFailure({ _tag: 'HttpApiDecodeError', issues, message: 'Invalid query' })
-
-    expect(failure).toEqual({ code: 'invalid_request', issues, kind: 'invalid_request', message: 'Invalid query', status: 400 })
-  })
-
-  test('reads a parameter error without issues', () => {
+  test('reads a parameter error', () => {
     const failure = readApiFailure({ error: { code: 'invalid_parameter', message: 'limit must be at most 100.' } })
 
-    expect(failure).toEqual({ code: 'invalid_parameter', issues: [], kind: 'invalid_request', message: 'limit must be at most 100.', status: 400 })
+    expect(failure).toEqual({ code: 'invalid_parameter', kind: 'invalid_request', message: 'limit must be at most 100.', status: 400 })
   })
 
   test('ignores bodies that are not documented errors', () => {
@@ -62,6 +63,18 @@ describe('readApiFailure', () => {
     expect(readApiFailure('Bad gateway')).toEqual(undefined)
     expect(readApiFailure({ error: { code: 'something_new', message: 'New.' } })).toEqual(undefined)
     expect(readApiFailure({ error: { code: 'internal_error' } })).toEqual(undefined)
+    expect(readApiFailure({ _tag: 'HttpApiDecodeError', issues: [], message: 'Invalid query' })).toEqual(undefined)
+  })
+})
+
+describe('readRetryAfter', () => {
+  test('reads whole seconds and ignores anything else', () => {
+    expect(readRetryAfter('120')).toEqual(120)
+    expect(readRetryAfter(' 5 ')).toEqual(5)
+    expect(readRetryAfter('Wed, 21 Oct 2026 07:28:00 GMT')).toEqual(undefined)
+    expect(readRetryAfter('')).toEqual(undefined)
+    expect(readRetryAfter(null)).toEqual(undefined)
+    expect(readRetryAfter(undefined)).toEqual(undefined)
   })
 })
 

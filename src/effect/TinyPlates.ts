@@ -146,8 +146,13 @@ const make = Effect.fnUntraced(function* (options: TinyPlatesOptions) {
 
   const api = yield* HttpApiClient.make(TinyPlatesApi, {
     baseUrl,
+    // Error responses fail here, before the generated client decodes them, so
+    // they are read in one place with their headers, like Retry-After.
     transformClient: (client) => {
-      return HttpClient.mapRequest(client, HttpClientRequest.bearerToken(Redacted.value(options.apiKey)))
+      return client.pipe(
+        HttpClient.mapRequest(HttpClientRequest.bearerToken(Redacted.value(options.apiKey))),
+        HttpClient.filterStatusOk,
+      )
     },
   })
 

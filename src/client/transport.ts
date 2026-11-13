@@ -101,7 +101,7 @@ export function createTransport(options: ClientOptions): Transport {
         return body
       }
 
-      const failure = readApiFailure(body)
+      const failure = readApiFailure(body, { retryAfter: response.headers.get('retry-after') })
 
       if (failure) {
         throw fromApiFailure(failure)

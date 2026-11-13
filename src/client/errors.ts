@@ -10,7 +10,6 @@ import type {
   RateLimitWindow,
   UnexpectedResponseErrorCode,
 } from '../core/errors.ts'
-import type { Issue } from '../generated/types.ts'
 
 type ErrorDetails<Code extends string> = {
   readonly cause?: unknown
@@ -64,17 +63,14 @@ export class InternalError extends TinyPlatesError {
   }
 }
 
-// The request had a missing or invalid parameter. `issues` lists them when the
-// API could not decode the request at all.
+// The request had a missing or invalid parameter. The message says which.
 export class InvalidRequestError extends TinyPlatesError {
   readonly code: InvalidRequestErrorCode
-  readonly issues: ReadonlyArray<Issue>
   override readonly name = 'InvalidRequestError'
 
-  constructor(details: ErrorDetails<InvalidRequestErrorCode> & { readonly issues: ReadonlyArray<Issue> }) {
+  constructor(details: ErrorDetails<InvalidRequestErrorCode>) {
     super(details)
     this.code = details.code
-    this.issues = details.issues
   }
 }
 
@@ -100,15 +96,19 @@ export class PlanRequiredError extends TinyPlatesError {
   }
 }
 
-// The account used its daily or weekly requests.
+// The account used its daily or weekly requests. `retryAfter` is the number of
+// seconds until the limit frees up, at the next midnight UTC. A weekly limit
+// may still be spent then, and the next RateLimitError names the midnight after.
 export class RateLimitError extends TinyPlatesError {
   readonly code: RateLimitErrorCode
   override readonly name = 'RateLimitError'
+  readonly retryAfter: number | undefined
   readonly window: RateLimitWindow
 
-  constructor(details: ErrorDetails<RateLimitErrorCode> & { readonly window: RateLimitWindow }) {
+  constructor(details: ErrorDetails<RateLimitErrorCode> & { readonly retryAfter: number | undefined, readonly window: RateLimitWindow }) {
     super(details)
     this.code = details.code
+    this.retryAfter = details.retryAfter
     this.window = details.window
   }
 }

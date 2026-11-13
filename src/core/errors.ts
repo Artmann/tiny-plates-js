@@ -1,15 +1,13 @@
 // Shared by the plain and the Effect client. Turns what the API sends back into
 // one of a few failures, grouped by what the caller can do about them.
 
-import type { Issue } from '../generated/types.ts'
-
 export type AuthenticationErrorCode = 'api_key_disabled' | 'api_key_expired' | 'api_key_required' | 'invalid_api_key'
 export type ConnectionErrorCode = 'network_error' | 'timeout'
 export type InternalErrorCode = 'internal_error'
-export type InvalidRequestErrorCode = 'invalid_parameter' | 'invalid_request' | 'search_query_required'
+export type InvalidRequestErrorCode = 'invalid_parameter' | 'search_query_required'
 export type NotFoundErrorCode = 'ingredient_not_found' | 'recipe_not_found'
 export type PlanRequiredErrorCode = 'business_plan_required'
-export type RateLimitErrorCode = 'daily_allowance_exceeded' | 'daily_limit_reached' | 'weekly_allowance_exceeded' | 'weekly_limit_reached'
+export type RateLimitErrorCode = 'daily_limit_reached' | 'weekly_limit_reached'
 export type UnexpectedResponseErrorCode = 'unexpected_response'
 
 export type ApiErrorCode =
@@ -23,13 +21,15 @@ export type ApiErrorCode =
 export type RateLimitWindow = 'daily' | 'weekly'
 
 // A failure the API reported. `status` is the HTTP status the API uses for it.
+// `retryAfter` is the number of seconds until a rate limit frees up, from the
+// Retry-After header.
 export type ApiFailure =
   | { readonly code: AuthenticationErrorCode, readonly kind: 'authentication', readonly message: string, readonly status: 401 }
   | { readonly code: InternalErrorCode, readonly kind: 'internal', readonly message: string, readonly status: 500 }
-  | { readonly code: InvalidRequestErrorCode, readonly issues: ReadonlyArray<Issue>, readonly kind: 'invalid_request', readonly message: string, readonly status: 400 }
+  | { readonly code: InvalidRequestErrorCode, readonly kind: 'invalid_request', readonly message: string, readonly status: 400 }
   | { readonly code: NotFoundErrorCode, readonly kind: 'not_found', readonly message: string, readonly status: 404 }
   | { readonly code: PlanRequiredErrorCode, readonly kind: 'plan_required', readonly message: string, readonly status: 403 }
-  | { readonly code: RateLimitErrorCode, readonly kind: 'rate_limit', readonly message: string, readonly status: 429, readonly window: RateLimitWindow }
+  | { readonly code: RateLimitErrorCode, readonly kind: 'rate_limit', readonly message: string, readonly retryAfter: number | undefined, readonly status: 429, readonly window: RateLimitWindow }
 
 export type ApiFailureKind = ApiFailure['kind']
 
@@ -38,16 +38,13 @@ export const apiErrorKinds: Readonly<Record<ApiErrorCode, ApiFailureKind>> = {
   api_key_expired: 'authentication',
   api_key_required: 'authentication',
   business_plan_required: 'plan_required',
-  daily_allowance_exceeded: 'rate_limit',
   daily_limit_reached: 'rate_limit',
   ingredient_not_found: 'not_found',
   internal_error: 'internal',
   invalid_api_key: 'authentication',
   invalid_parameter: 'invalid_request',
-  invalid_request: 'invalid_request',
   recipe_not_found: 'not_found',
   search_query_required: 'invalid_request',
-  weekly_allowance_exceeded: 'rate_limit',
   weekly_limit_reached: 'rate_limit',
 }
 
@@ -81,33 +78,31 @@ function isApiErrorCode(value: unknown): value is ApiErrorCode {
   return typeof value === 'string' && Object.hasOwn(apiErrorKinds, value)
 }
 
-function isIssueList(value: unknown): value is ReadonlyArray<Issue> {
-  return Array.isArray(value) && value.every((issue) => {
-    return isRecord(issue) && typeof issue.message === 'string' && Array.isArray(issue.path)
-  })
-}
-
 export function rateLimitWindow(code: RateLimitErrorCode): RateLimitWindow {
-  return code.startsWith('daily') ? 'daily' : 'weekly'
+  return code === 'daily_limit_reached' ? 'daily' : 'weekly'
 }
 
-// Reads an error body from the API. Returns undefined when the body isn't one of
-// the documented errors, which the caller reports as an unexpected response.
-export function readApiFailure(body: unknown): ApiFailure | undefined {
-  if (!isRecord(body)) {
+// Reads the Retry-After header. The API sends whole seconds. Anything else,
+// such as an HTTP date from a proxy, is ignored.
+export function readRetryAfter(value: string | null | undefined): number | undefined {
+  if (value === null || value === undefined || !/^\d+$/.test(value.trim())) {
     return undefined
   }
 
-  // Requests the API can't decode get its framework's error shape instead of
-  // the usual { error: { code, message } }.
-  if (body._tag === 'HttpApiDecodeError' && typeof body.message === 'string') {
-    return {
-      code: 'invalid_request',
-      issues: isIssueList(body.issues) ? body.issues : [],
-      kind: 'invalid_request',
-      message: body.message,
-      status: 400,
-    }
+  return Number(value.trim())
+}
+
+type ResponseDetails = {
+  // The Retry-After header, if the response had one.
+  readonly retryAfter?: string | null
+}
+
+// Reads an error body from the API. Returns undefined when the body isn't the
+// documented { error: { code, message } } shape with a known code, which the
+// caller reports as an unexpected response.
+export function readApiFailure(body: unknown, response: ResponseDetails = {}): ApiFailure | undefined {
+  if (!isRecord(body)) {
+    return undefined
   }
 
   const detail = body.error
@@ -116,10 +111,10 @@ export function readApiFailure(body: unknown): ApiFailure | undefined {
     return undefined
   }
 
-  return toApiFailure(detail.code, detail.message)
+  return toApiFailure(detail.code, detail.message, readRetryAfter(response.retryAfter))
 }
 
-function toApiFailure(code: ApiErrorCode, message: string): ApiFailure {
+function toApiFailure(code: ApiErrorCode, message: string, retryAfter: number | undefined): ApiFailure {
   switch (code) {
     case 'api_key_disabled':
     case 'api_key_expired':
@@ -130,11 +125,9 @@ function toApiFailure(code: ApiErrorCode, message: string): ApiFailure {
     case 'business_plan_required': {
       return { code, kind: 'plan_required', message, status: 403 }
     }
-    case 'daily_allowance_exceeded':
     case 'daily_limit_reached':
-    case 'weekly_allowance_exceeded':
     case 'weekly_limit_reached': {
-      return { code, kind: 'rate_limit', message, status: 429, window: rateLimitWindow(code) }
+      return { code, kind: 'rate_limit', message, retryAfter, status: 429, window: rateLimitWindow(code) }
     }
     case 'ingredient_not_found':
     case 'recipe_not_found': {
@@ -144,9 +137,8 @@ function toApiFailure(code: ApiErrorCode, message: string): ApiFailure {
       return { code, kind: 'internal', message, status: 500 }
     }
     case 'invalid_parameter':
-    case 'invalid_request':
     case 'search_query_required': {
-      return { code, issues: [], kind: 'invalid_request', message, status: 400 }
+      return { code, kind: 'invalid_request', message, status: 400 }
     }
   }
 }

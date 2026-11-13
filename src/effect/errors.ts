@@ -2,12 +2,6 @@ import { Cause, Effect, Schema } from 'effect'
 import { HttpClientError } from 'effect/http/HttpClientError'
 import { clientMessages, readApiFailure } from '../core/errors.ts'
 import type { ApiFailure } from '../core/errors.ts'
-import type { Issue as IssueType } from '../generated/types.ts'
-
-const Issue = Schema.declare((value: unknown): value is IssueType => {
-  return typeof value === 'object' && value !== null
-})
-
 // The API key is missing, wrong, expired or disabled.
 export class AuthenticationError extends Schema.TaggedError<AuthenticationError>()('AuthenticationError', {
   code: Schema.Literals(['api_key_disabled', 'api_key_expired', 'api_key_required', 'invalid_api_key']),
@@ -29,10 +23,9 @@ export class InternalError extends Schema.TaggedError<InternalError>()('Internal
   status: Schema.Literal(500),
 }) {}
 
-// The request had a missing or invalid parameter.
+// The request had a missing or invalid parameter. The message says which.
 export class InvalidRequestError extends Schema.TaggedError<InvalidRequestError>()('InvalidRequestError', {
-  code: Schema.Literals(['invalid_parameter', 'invalid_request', 'search_query_required']),
-  issues: Schema.Array(Issue),
+  code: Schema.Literals(['invalid_parameter', 'search_query_required']),
   message: Schema.String,
   status: Schema.Literal(400),
 }) {}
@@ -51,10 +44,13 @@ export class PlanRequiredError extends Schema.TaggedError<PlanRequiredError>()('
   status: Schema.Literal(403),
 }) {}
 
-// The account used its daily or weekly requests.
+// The account used its daily or weekly requests. `retryAfter` is the number of
+// seconds until the limit frees up, at the next midnight UTC. A weekly limit
+// may still be spent then, and the next RateLimitError names the midnight after.
 export class RateLimitError extends Schema.TaggedError<RateLimitError>()('RateLimitError', {
-  code: Schema.Literals(['daily_allowance_exceeded', 'daily_limit_reached', 'weekly_allowance_exceeded', 'weekly_limit_reached']),
+  code: Schema.Literals(['daily_limit_reached', 'weekly_limit_reached']),
   message: Schema.String,
+  retryAfter: Schema.UndefinedOr(Schema.Number),
   status: Schema.Literal(429),
   window: Schema.Literals(['daily', 'weekly']),
 }) {}
@@ -117,11 +113,8 @@ function unexpectedResponseError(cause: unknown, status: number | undefined) {
 }
 
 // Maps whatever the generated HttpApi client failed with to one of our errors.
-//
-// The spec pins each error message to an exact text and leaves out some
-// statuses, like a 500 from /health, so the generated error schemas reject
-// errors the API really sends. When the generated client gives up on a
-// response, its body is read here instead, the same way the plain client does.
+// Error responses arrive as status code errors, so their body is read here the
+// same way the plain client reads it.
 export function toTinyPlatesError(error: unknown, context: FailureContext): Effect.Effect<TinyPlatesError> {
   if (Cause.isTimeoutError(error)) {
     return Effect.succeed(timeoutError(error, context))
@@ -140,7 +133,7 @@ export function toTinyPlatesError(error: unknown, context: FailureContext): Effe
 
     return response.json.pipe(
       Effect.map((body) => {
-        const failure = readApiFailure(body)
+        const failure = readApiFailure(body, { retryAfter: response.headers['retry-after'] })
 
         return failure ? fromApiFailure(failure) : unexpectedResponseError(error, response.status)
       }),
@@ -150,7 +143,5 @@ export function toTinyPlatesError(error: unknown, context: FailureContext): Effe
     )
   }
 
-  const failure = readApiFailure(error)
-
-  return Effect.succeed(failure ? fromApiFailure(failure) : unexpectedResponseError(error, undefined))
+  return Effect.succeed(unexpectedResponseError(error, undefined))
 }

@@ -5,8 +5,8 @@ import { HttpApi, HttpApiEndpoint, HttpApiGroup, HttpApiMiddleware, HttpApiSchem
 // non-recursive definitions
 export type Date = string
 export const Date = Schema.String.annotate({ "description": "a string to be decoded into a Date", "identifier": "Date" })
-export type PropertyKey = string | number | { readonly "_tag": "symbol", readonly "key": string }
-export const PropertyKey = Schema.Union([Schema.String, Schema.Finite, Schema.Struct({ "_tag": Schema.Literal("symbol"), "key": Schema.String }).annotate({ "description": "an object to be decoded into a globally shared symbol" })]).annotate({ "identifier": "PropertyKey" })
+export type InternalError = { readonly "error": { readonly "code": "internal_error", readonly "message": string } }
+export const InternalError = Schema.Struct({ "error": Schema.Struct({ "code": Schema.Literal("internal_error"), "message": Schema.String.annotate({ "examples": ["Something went wrong. Please try again."] }) }) }).annotate({ "identifier": "InternalError" })
 export type Pagination = { readonly "limit": number, readonly "offset": number, readonly "total": number }
 export const Pagination = Schema.Struct({ "limit": Schema.Finite, "offset": Schema.Finite, "total": Schema.Finite }).annotate({ "description": "Offset pagination. `limit` is capped at 100.", "identifier": "Pagination" })
 export type NonEmptyTrimmedString = string
@@ -39,46 +39,40 @@ export type RecipeText = { readonly "ingredients": ReadonlyArray<string>, readon
 export const RecipeText = Schema.Struct({ "ingredients": Schema.Array(Schema.String), "instructions": Schema.Array(Schema.String) }).annotate({ "description": "The recipe as lines of text: each ingredient's `display` line and each step's `text`, in order. A convenience for rendering; everything here is also in the structured fields.", "identifier": "RecipeText" })
 export type InvalidParameterError = { readonly "error": { readonly "code": "invalid_parameter", readonly "message": string } }
 export const InvalidParameterError = Schema.Struct({ "error": Schema.Struct({ "code": Schema.Literal("invalid_parameter"), "message": Schema.String }) }).annotate({ "identifier": "InvalidParameterError" })
-export type ApiKeyDisabledErrorDetail = { readonly "code": "api_key_disabled", readonly "message": "This API key has been disabled." }
-export const ApiKeyDisabledErrorDetail = Schema.Struct({ "code": Schema.Literal("api_key_disabled"), "message": Schema.Literal("This API key has been disabled.") }).annotate({ "identifier": "ApiKeyDisabledErrorDetail" })
-export type ApiKeyExpiredErrorDetail = { readonly "code": "api_key_expired", readonly "message": "This API key has expired." }
-export const ApiKeyExpiredErrorDetail = Schema.Struct({ "code": Schema.Literal("api_key_expired"), "message": Schema.Literal("This API key has expired.") }).annotate({ "identifier": "ApiKeyExpiredErrorDetail" })
-export type ApiKeyRequiredErrorDetail = { readonly "code": "api_key_required", readonly "message": "An API key is required. Pass it as an Authorization: Bearer header." }
-export const ApiKeyRequiredErrorDetail = Schema.Struct({ "code": Schema.Literal("api_key_required"), "message": Schema.Literal("An API key is required. Pass it as an Authorization: Bearer header.") }).annotate({ "identifier": "ApiKeyRequiredErrorDetail" })
-export type InvalidApiKeyErrorDetail = { readonly "code": "invalid_api_key", readonly "message": "Invalid API key." }
-export const InvalidApiKeyErrorDetail = Schema.Struct({ "code": Schema.Literal("invalid_api_key"), "message": Schema.Literal("Invalid API key.") }).annotate({ "identifier": "InvalidApiKeyErrorDetail" })
-export type DailyAllowanceExceededErrorDetail = { readonly "code": "daily_allowance_exceeded", readonly "message": "Daily allowance of 50 requests used. It resets at midnight UTC. Paid plans include more; see https://www.tinyplates.dev/pricing." }
-export const DailyAllowanceExceededErrorDetail = Schema.Struct({ "code": Schema.Literal("daily_allowance_exceeded"), "message": Schema.Literal("Daily allowance of 50 requests used. It resets at midnight UTC. Paid plans include more; see https://www.tinyplates.dev/pricing.") }).annotate({ "identifier": "DailyAllowanceExceededErrorDetail" })
+export type ApiKeyDisabledErrorDetail = { readonly "code": "api_key_disabled", readonly "message": string }
+export const ApiKeyDisabledErrorDetail = Schema.Struct({ "code": Schema.Literal("api_key_disabled"), "message": Schema.String.annotate({ "examples": ["This API key has been disabled."] }) }).annotate({ "identifier": "ApiKeyDisabledErrorDetail" })
+export type ApiKeyExpiredErrorDetail = { readonly "code": "api_key_expired", readonly "message": string }
+export const ApiKeyExpiredErrorDetail = Schema.Struct({ "code": Schema.Literal("api_key_expired"), "message": Schema.String.annotate({ "examples": ["This API key has expired."] }) }).annotate({ "identifier": "ApiKeyExpiredErrorDetail" })
+export type ApiKeyRequiredErrorDetail = { readonly "code": "api_key_required", readonly "message": string }
+export const ApiKeyRequiredErrorDetail = Schema.Struct({ "code": Schema.Literal("api_key_required"), "message": Schema.String.annotate({ "examples": ["An API key is required. Pass it as an Authorization: Bearer header."] }) }).annotate({ "identifier": "ApiKeyRequiredErrorDetail" })
+export type InvalidApiKeyErrorDetail = { readonly "code": "invalid_api_key", readonly "message": string }
+export const InvalidApiKeyErrorDetail = Schema.Struct({ "code": Schema.Literal("invalid_api_key"), "message": Schema.String.annotate({ "examples": ["Invalid API key."] }) }).annotate({ "identifier": "InvalidApiKeyErrorDetail" })
 export type DailyLimitReachedErrorDetail = { readonly "code": "daily_limit_reached", readonly "message": string }
 export const DailyLimitReachedErrorDetail = Schema.Struct({ "code": Schema.Literal("daily_limit_reached"), "message": Schema.String }).annotate({ "identifier": "DailyLimitReachedErrorDetail" })
-export type WeeklyAllowanceExceededErrorDetail = { readonly "code": "weekly_allowance_exceeded", readonly "message": "Weekly allowance of 300 requests used. It covers the last 7 days. Paid plans include more; see https://www.tinyplates.dev/pricing." }
-export const WeeklyAllowanceExceededErrorDetail = Schema.Struct({ "code": Schema.Literal("weekly_allowance_exceeded"), "message": Schema.Literal("Weekly allowance of 300 requests used. It covers the last 7 days. Paid plans include more; see https://www.tinyplates.dev/pricing.") }).annotate({ "identifier": "WeeklyAllowanceExceededErrorDetail" })
 export type WeeklyLimitReachedErrorDetail = { readonly "code": "weekly_limit_reached", readonly "message": string }
 export const WeeklyLimitReachedErrorDetail = Schema.Struct({ "code": Schema.Literal("weekly_limit_reached"), "message": Schema.String }).annotate({ "identifier": "WeeklyLimitReachedErrorDetail" })
-export type InternalError = { readonly "error": { readonly "code": "internal_error", readonly "message": "Something went wrong. Please try again." } }
-export const InternalError = Schema.Struct({ "error": Schema.Struct({ "code": Schema.Literal("internal_error"), "message": Schema.Literal("Something went wrong. Please try again.") }) }).annotate({ "identifier": "InternalError" })
 export type BusinessPlanRequiredError = { readonly "error": { readonly "code": "business_plan_required", readonly "message": string } }
 export const BusinessPlanRequiredError = Schema.Struct({ "error": Schema.Struct({ "code": Schema.Literal("business_plan_required"), "message": Schema.String }) }).annotate({ "identifier": "BusinessPlanRequiredError" })
-export type RecipeNotFoundError = { readonly "error": { readonly "code": "recipe_not_found", readonly "message": "Recipe not found." } }
-export const RecipeNotFoundError = Schema.Struct({ "error": Schema.Struct({ "code": Schema.Literal("recipe_not_found"), "message": Schema.Literal("Recipe not found.") }) }).annotate({ "identifier": "RecipeNotFoundError" })
-export type SearchQueryRequiredError = { readonly "error": { readonly "code": "search_query_required", readonly "message": "The query parameter is required." } }
-export const SearchQueryRequiredError = Schema.Struct({ "error": Schema.Struct({ "code": Schema.Literal("search_query_required"), "message": Schema.Literal("The query parameter is required.") }) }).annotate({ "identifier": "SearchQueryRequiredError" })
+export type RecipeNotFoundError = { readonly "error": { readonly "code": "recipe_not_found", readonly "message": string } }
+export const RecipeNotFoundError = Schema.Struct({ "error": Schema.Struct({ "code": Schema.Literal("recipe_not_found"), "message": Schema.String.annotate({ "examples": ["Recipe not found."] }) }) }).annotate({ "identifier": "RecipeNotFoundError" })
+export type SearchQueryRequiredErrorDetail = { readonly "code": "search_query_required", readonly "message": string }
+export const SearchQueryRequiredErrorDetail = Schema.Struct({ "code": Schema.Literal("search_query_required"), "message": Schema.String.annotate({ "examples": ["The query parameter is required."] }) }).annotate({ "identifier": "SearchQueryRequiredErrorDetail" })
+export type InvalidParameterErrorDetail = { readonly "code": "invalid_parameter", readonly "message": string }
+export const InvalidParameterErrorDetail = Schema.Struct({ "code": Schema.Literal("invalid_parameter"), "message": Schema.String }).annotate({ "identifier": "InvalidParameterErrorDetail" })
 export type Ingredient = { readonly "aliases": { readonly [x: string]: ReadonlyArray<string> }, readonly "id": string, readonly "names": { readonly [x: string]: string }, readonly "recipeCount": number }
 export const Ingredient = Schema.Struct({ "aliases": Schema.Record(Schema.String, Schema.Array(Schema.String)), "id": Schema.String, "names": Schema.Record(Schema.String, Schema.String), "recipeCount": Schema.Finite }).annotate({ "description": "A canonical ingredient. `names` holds the English name; `aliases` holds every spelling seen, per language.", "identifier": "Ingredient" })
 export type ResolvedIngredient = { readonly "id": string, readonly "name": string, readonly "query": string }
 export const ResolvedIngredient = Schema.Struct({ "id": Schema.String.annotate({ "description": "The canonical id." }), "name": Schema.String.annotate({ "description": "The canonical English name." }), "query": Schema.String.annotate({ "description": "The name as it was sent, normalized." }) }).annotate({ "identifier": "ResolvedIngredient" })
 export type Substitution = { readonly "caution"?: string, readonly "ingredient": string, readonly "note"?: string, readonly "ratio": number }
 export const Substitution = Schema.Struct({ "caution": Schema.optionalKey(Schema.String.annotate({ "description": "What this swap cannot be used for. Present when the substitute changes the dish in a way the cook has to know about." })), "ingredient": Schema.String, "note": Schema.optionalKey(Schema.String.annotate({ "description": "How to prepare or handle the substitute." })), "ratio": Schema.Number.annotate({ "description": "How much substitute to use for one unit of the original: 0.75 means three quarters as much." }).check(Schema.isFinite().annotate({ "expected": "a finite number" })) }).annotate({ "identifier": "Substitution" })
-export type IngredientNotFoundError = { readonly "error": { readonly "code": "ingredient_not_found", readonly "message": "Ingredient not found." } }
-export const IngredientNotFoundError = Schema.Struct({ "error": Schema.Struct({ "code": Schema.Literal("ingredient_not_found"), "message": Schema.Literal("Ingredient not found.") }) }).annotate({ "identifier": "IngredientNotFoundError" })
+export type IngredientNotFoundError = { readonly "error": { readonly "code": "ingredient_not_found", readonly "message": string } }
+export const IngredientNotFoundError = Schema.Struct({ "error": Schema.Struct({ "code": Schema.Literal("ingredient_not_found"), "message": Schema.String.annotate({ "examples": ["Ingredient not found."] }) }) }).annotate({ "identifier": "IngredientNotFoundError" })
 export type IngredientPairing = { readonly "id": string, readonly "name": string, readonly "recipeCount": number, readonly "share": number }
 export const IngredientPairing = Schema.Struct({ "id": Schema.String.annotate({ "description": "The canonical id." }), "name": Schema.String.annotate({ "description": "The canonical English name." }), "recipeCount": Schema.Number.annotate({ "description": "How many of the recipes read also use this ingredient." }).check(Schema.isFinite().annotate({ "expected": "a finite number" })), "share": Schema.Number.annotate({ "description": "The fraction of the recipes read that also use this ingredient, from 0 to 1, rounded to three decimals." }).check(Schema.isFinite().annotate({ "expected": "a finite number" })) }).annotate({ "description": "An ingredient that recipes use together with another.", "identifier": "IngredientPairing" })
 export type RegulatedAllergenFeature = "celery" | "crustaceans" | "eggs" | "fish" | "gluten-cereals" | "lupin" | "milk" | "molluscs" | "mustard" | "nuts-eu" | "peanuts" | "sesame" | "soy" | "sulphites" | "tree-nuts-us" | "wheat"
 export const RegulatedAllergenFeature = Schema.Literals(["celery", "crustaceans", "eggs", "fish", "gluten-cereals", "lupin", "milk", "molluscs", "mustard", "nuts-eu", "peanuts", "sesame", "soy", "sulphites", "tree-nuts-us", "wheat"]).annotate({ "description": "A regulated allergen feature. GET /vocabularies states whether each feature belongs to EU or US regulation.", "identifier": "RegulatedAllergenFeature" })
 export type PageStatusCounts = { readonly "discovered": number, readonly "extracted": number, readonly "extracting": number, readonly "failed": number, readonly "fetched": number, readonly "fetching": number }
 export const PageStatusCounts = Schema.Struct({ "discovered": Schema.Finite, "extracted": Schema.Finite, "extracting": Schema.Finite, "failed": Schema.Finite, "fetched": Schema.Finite, "fetching": Schema.Finite }).annotate({ "identifier": "PageStatusCounts" })
-export type Issue = { readonly "_tag": "Pointer" | "Unexpected" | "Missing" | "Composite" | "Refinement" | "Transformation" | "Type" | "Forbidden", readonly "path": ReadonlyArray<PropertyKey>, readonly "message": string }
-export const Issue = Schema.Struct({ "_tag": Schema.Literals(["Pointer", "Unexpected", "Missing", "Composite", "Refinement", "Transformation", "Type", "Forbidden"]).annotate({ "description": "The tag identifying the type of parse issue" }), "path": Schema.Array(PropertyKey).annotate({ "description": "The path to the property where the issue occurred" }), "message": Schema.String.annotate({ "description": "A descriptive message explaining the issue" }) }).annotate({ "description": "Represents an error encountered while parsing a value to match the schema", "identifier": "Issue" })
 export type Author = { readonly "name": NonEmptyTrimmedString, readonly "url"?: Url }
 export const Author = Schema.Struct({ "name": NonEmptyTrimmedString, "url": Schema.optionalKey(Url) }).annotate({ "identifier": "Author" })
 export type ImageVariant = { readonly "height"?: number, readonly "url": Url, readonly "width"?: number }
@@ -95,8 +89,6 @@ export type Quantity = { readonly "max"?: NonNegative, readonly "unit"?: Unit, r
 export const Quantity = Schema.Struct({ "max": Schema.optionalKey(NonNegative), "unit": Schema.optionalKey(Unit), "value": NonNegative }).annotate({ "identifier": "Quantity" })
 export type IngredientDetail = { readonly "aliases": { readonly [x: string]: ReadonlyArray<string> }, readonly "allergens"?: RecipeAllergens, readonly "density"?: number, readonly "dietary"?: Dietary, readonly "id": string, readonly "name": string, readonly "names": { readonly [x: string]: string }, readonly "parent"?: string, readonly "pourable": boolean, readonly "recipeCount": number, readonly "staple": boolean, readonly "substitutions": ReadonlyArray<Substitution> }
 export const IngredientDetail = Schema.Struct({ "aliases": Schema.Record(Schema.String, Schema.Array(Schema.String)).annotate({ "description": "Every spelling seen, keyed by two-letter language code." }), "allergens": Schema.optionalKey(Schema.suspend((): Schema.Codec<RecipeAllergens> => RecipeAllergens).annotate({ "description": "Whether the ingredient contains each regulated allergen feature. Absent until the ingredient has been classified." })), "density": Schema.optionalKey(Schema.Number.annotate({ "description": "Grams per millilitre. Present only when the density is well established; anything else is left out rather than guessed." }).check(Schema.isFinite().annotate({ "expected": "a finite number" }))), "dietary": Schema.optionalKey(Schema.suspend((): Schema.Codec<Dietary> => Dietary).annotate({ "description": "Whether the ingredient suits each diet. Absent until the ingredient has been classified." })), "id": Schema.String, "name": Schema.String.annotate({ "description": "The canonical English name." }), "names": Schema.Record(Schema.String, Schema.String).annotate({ "description": "The canonical name, keyed by two-letter language code." }), "parent": Schema.optionalKey(Schema.String.annotate({ "description": "The id of the food this is a kind or a part of, such as \"chicken\" for \"chicken-thigh\". Absent when the ingredient is a food of its own." })), "pourable": Schema.Boolean.annotate({ "description": "Whether the ingredient is a liquid that is poured rather than weighed, so a volume of it stays a volume when a recipe is converted." }), "recipeCount": Schema.Number.annotate({ "description": "How many recipes use this ingredient." }).check(Schema.isFinite().annotate({ "expected": "a finite number" })), "staple": Schema.Boolean.annotate({ "description": "Whether a kitchen is assumed to have it already, as /pantry does by default." }), "substitutions": Schema.Array(Substitution).annotate({ "description": "What to use instead, the same options /substitutions gives. Empty when nothing is known to replace it." }) }).annotate({ "description": "A canonical ingredient with its allergens, diets, substitutions and kitchen properties.", "identifier": "IngredientDetail" })
-export type HttpApiDecodeError = { readonly "issues": ReadonlyArray<Issue>, readonly "message": string, readonly "_tag": "HttpApiDecodeError" }
-export const HttpApiDecodeError = Schema.Struct({ "issues": Schema.Array(Issue), "message": Schema.String, "_tag": Schema.Literal("HttpApiDecodeError") }).annotate({ "description": "The request did not match the expected schema", "identifier": "HttpApiDecodeError" })
 export type ImageMedia = { readonly "alt"?: NonEmptyTrimmedString, readonly "caption"?: NonEmptyTrimmedString, readonly "id": string, readonly "license"?: NonEmptyTrimmedString, readonly "sourceUrl"?: Url, readonly "step"?: number, readonly "height"?: number, readonly "role": "gallery" | "hero" | "step" | "thumbnail", readonly "type": "image", readonly "url": Url, readonly "variants"?: ReadonlyArray<ImageVariant>, readonly "width"?: number }
 export const ImageMedia = Schema.Struct({ "alt": Schema.optionalKey(NonEmptyTrimmedString), "caption": Schema.optionalKey(NonEmptyTrimmedString), "id": Schema.String.annotate({ "title": "nonEmptyString", "description": "a non empty string" }).check(Schema.isPattern(new globalThis.RegExp("^\\S[\\s\\S]*\\S$|^\\S$|^$", "u")).annotate({ "expected": "a string matching the RegExp ^\\S[\\s\\S]*\\S$|^\\S$|^$" })).check(Schema.isMinLength(1).annotate({ "expected": "a value with a length of at least 1" })), "license": Schema.optionalKey(NonEmptyTrimmedString), "sourceUrl": Schema.optionalKey(Url), "step": Schema.optionalKey(Schema.Number.annotate({ "title": "positive", "description": "a positive number" }).check(Schema.isInt().annotate({ "expected": "an integer" })).check(Schema.isGreaterThan(0).annotate({ "expected": "a value greater than 0" }))), "height": Schema.optionalKey(Schema.Number.annotate({ "title": "positive", "description": "a positive number" }).check(Schema.isInt().annotate({ "expected": "an integer" })).check(Schema.isGreaterThan(0).annotate({ "expected": "a value greater than 0" }))), "role": Schema.Literals(["gallery", "hero", "step", "thumbnail"]), "type": Schema.Literal("image"), "url": Url, "variants": Schema.optionalKey(Schema.Array(ImageVariant)), "width": Schema.optionalKey(Schema.Number.annotate({ "title": "positive", "description": "a positive number" }).check(Schema.isInt().annotate({ "expected": "an integer" })).check(Schema.isGreaterThan(0).annotate({ "expected": "a value greater than 0" }))) }).annotate({ "identifier": "ImageMedia" })
 export type RecipeInstruction = { readonly "duration"?: Duration, readonly "equipment"?: ReadonlyArray<Slug>, readonly "group"?: NonEmptyTrimmedString, readonly "ingredients"?: ReadonlyArray<string>, readonly "step": number, readonly "techniques"?: ReadonlyArray<Slug>, readonly "temperature"?: Temperature, readonly "text": NonEmptyTrimmedString }
@@ -126,20 +118,20 @@ export const SearchResult = Schema.Struct({ "author": Schema.optionalKey(Author)
 // schemas
 export type HealthCheck200 = { readonly "gitSha": string, readonly "startedAt": Date, readonly "status": "ok" }
 export const HealthCheck200 = Schema.Struct({ "gitSha": Schema.String, "startedAt": Date, "status": Schema.Literal("ok") })
-export type HealthCheck400 = HttpApiDecodeError
-export const HealthCheck400 = HttpApiDecodeError
+export type HealthCheck500 = InternalError
+export const HealthCheck500 = InternalError
 export type PantryListParams = { readonly "ingredients": string, readonly "language"?: string, readonly "limit"?: string, readonly "maxMissing"?: string, readonly "offset"?: string, readonly "staples"?: string, readonly "without"?: string }
 export const PantryListParams = Schema.Struct({ "ingredients": Schema.String, "language": Schema.optionalKey(Schema.String), "limit": Schema.optionalKey(Schema.String), "maxMissing": Schema.optionalKey(Schema.String), "offset": Schema.optionalKey(Schema.String), "staples": Schema.optionalKey(Schema.String), "without": Schema.optionalKey(Schema.String) })
 export type PantryListQuery = { readonly "ingredients": string, readonly "language"?: string, readonly "limit"?: string, readonly "maxMissing"?: string, readonly "offset"?: string, readonly "staples"?: string, readonly "without"?: string }
 export const PantryListQuery = Schema.Struct({ "ingredients": Schema.String, "language": Schema.optionalKey(Schema.String), "limit": Schema.optionalKey(Schema.String), "maxMissing": Schema.optionalKey(Schema.String), "offset": Schema.optionalKey(Schema.String), "staples": Schema.optionalKey(Schema.String), "without": Schema.optionalKey(Schema.String) })
 export type PantryList200 = { readonly "pagination": Pagination, readonly "recipes": ReadonlyArray<PantryRecipe> }
 export const PantryList200 = Schema.Struct({ "pagination": Pagination, "recipes": Schema.Array(PantryRecipe) })
-export type PantryList400 = HttpApiDecodeError | InvalidParameterError
-export const PantryList400 = Schema.Union([HttpApiDecodeError, InvalidParameterError])
+export type PantryList400 = InvalidParameterError
+export const PantryList400 = InvalidParameterError
 export type PantryList401 = { readonly "error": ApiKeyDisabledErrorDetail | ApiKeyExpiredErrorDetail | ApiKeyRequiredErrorDetail | InvalidApiKeyErrorDetail }
 export const PantryList401 = Schema.Struct({ "error": Schema.Union([ApiKeyDisabledErrorDetail, ApiKeyExpiredErrorDetail, ApiKeyRequiredErrorDetail, InvalidApiKeyErrorDetail], { mode: "oneOf" }) })
-export type PantryList429 = { readonly "error": DailyAllowanceExceededErrorDetail | DailyLimitReachedErrorDetail | WeeklyAllowanceExceededErrorDetail | WeeklyLimitReachedErrorDetail }
-export const PantryList429 = Schema.Struct({ "error": Schema.Union([DailyAllowanceExceededErrorDetail, DailyLimitReachedErrorDetail, WeeklyAllowanceExceededErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
+export type PantryList429 = { readonly "error": DailyLimitReachedErrorDetail | WeeklyLimitReachedErrorDetail }
+export const PantryList429 = Schema.Struct({ "error": Schema.Union([DailyLimitReachedErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
 export type PantryList500 = InternalError
 export const PantryList500 = InternalError
 export type PopularListParams = { readonly "language"?: string, readonly "limit"?: string, readonly "offset"?: string }
@@ -148,12 +140,10 @@ export type PopularListQuery = { readonly "language"?: string, readonly "limit"?
 export const PopularListQuery = Schema.Struct({ "language": Schema.optionalKey(Schema.String), "limit": Schema.optionalKey(Schema.String), "offset": Schema.optionalKey(Schema.String) })
 export type PopularList200 = { readonly "pagination": Pagination, readonly "recipes": ReadonlyArray<PopularRecipe> }
 export const PopularList200 = Schema.Struct({ "pagination": Pagination, "recipes": Schema.Array(PopularRecipe) })
-export type PopularList400 = HttpApiDecodeError
-export const PopularList400 = HttpApiDecodeError
 export type PopularList401 = { readonly "error": ApiKeyDisabledErrorDetail | ApiKeyExpiredErrorDetail | ApiKeyRequiredErrorDetail | InvalidApiKeyErrorDetail }
 export const PopularList401 = Schema.Struct({ "error": Schema.Union([ApiKeyDisabledErrorDetail, ApiKeyExpiredErrorDetail, ApiKeyRequiredErrorDetail, InvalidApiKeyErrorDetail], { mode: "oneOf" }) })
-export type PopularList429 = { readonly "error": DailyAllowanceExceededErrorDetail | DailyLimitReachedErrorDetail | WeeklyAllowanceExceededErrorDetail | WeeklyLimitReachedErrorDetail }
-export const PopularList429 = Schema.Struct({ "error": Schema.Union([DailyAllowanceExceededErrorDetail, DailyLimitReachedErrorDetail, WeeklyAllowanceExceededErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
+export type PopularList429 = { readonly "error": DailyLimitReachedErrorDetail | WeeklyLimitReachedErrorDetail }
+export const PopularList429 = Schema.Struct({ "error": Schema.Union([DailyLimitReachedErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
 export type PopularList500 = InternalError
 export const PopularList500 = InternalError
 export type RecipesListParams = { readonly "category"?: string, readonly "course"?: string, readonly "cuisine"?: string, readonly "diet"?: string, readonly "equipment"?: string, readonly "excludeIngredients"?: string, readonly "ingredient"?: string, readonly "ingredients"?: string, readonly "language"?: string, readonly "limit"?: string, readonly "maxCalories"?: string, readonly "maxCookMinutes"?: string, readonly "maxSodium"?: string, readonly "maxTotalMinutes"?: string, readonly "minFiber"?: string, readonly "minProtein"?: string, readonly "nutrition"?: string, readonly "offset"?: string, readonly "time"?: string, readonly "without"?: string }
@@ -162,14 +152,14 @@ export type RecipesListQuery = { readonly "category"?: string, readonly "course"
 export const RecipesListQuery = Schema.Struct({ "category": Schema.optionalKey(Schema.String), "course": Schema.optionalKey(Schema.String), "cuisine": Schema.optionalKey(Schema.String), "diet": Schema.optionalKey(Schema.String), "equipment": Schema.optionalKey(Schema.String), "excludeIngredients": Schema.optionalKey(Schema.String), "ingredient": Schema.optionalKey(Schema.String), "ingredients": Schema.optionalKey(Schema.String), "language": Schema.optionalKey(Schema.String), "limit": Schema.optionalKey(Schema.String), "maxCalories": Schema.optionalKey(Schema.String), "maxCookMinutes": Schema.optionalKey(Schema.String), "maxSodium": Schema.optionalKey(Schema.String), "maxTotalMinutes": Schema.optionalKey(Schema.String), "minFiber": Schema.optionalKey(Schema.String), "minProtein": Schema.optionalKey(Schema.String), "nutrition": Schema.optionalKey(Schema.String), "offset": Schema.optionalKey(Schema.String), "time": Schema.optionalKey(Schema.String), "without": Schema.optionalKey(Schema.String) })
 export type RecipesList200 = { readonly "pagination": Pagination, readonly "recipes": ReadonlyArray<Recipe> }
 export const RecipesList200 = Schema.Struct({ "pagination": Pagination, "recipes": Schema.Array(Recipe) })
-export type RecipesList400 = HttpApiDecodeError | InvalidParameterError
-export const RecipesList400 = Schema.Union([HttpApiDecodeError, InvalidParameterError])
+export type RecipesList400 = InvalidParameterError
+export const RecipesList400 = InvalidParameterError
 export type RecipesList401 = { readonly "error": ApiKeyDisabledErrorDetail | ApiKeyExpiredErrorDetail | ApiKeyRequiredErrorDetail | InvalidApiKeyErrorDetail }
 export const RecipesList401 = Schema.Struct({ "error": Schema.Union([ApiKeyDisabledErrorDetail, ApiKeyExpiredErrorDetail, ApiKeyRequiredErrorDetail, InvalidApiKeyErrorDetail], { mode: "oneOf" }) })
 export type RecipesList403 = BusinessPlanRequiredError
 export const RecipesList403 = BusinessPlanRequiredError
-export type RecipesList429 = { readonly "error": DailyAllowanceExceededErrorDetail | DailyLimitReachedErrorDetail | WeeklyAllowanceExceededErrorDetail | WeeklyLimitReachedErrorDetail }
-export const RecipesList429 = Schema.Struct({ "error": Schema.Union([DailyAllowanceExceededErrorDetail, DailyLimitReachedErrorDetail, WeeklyAllowanceExceededErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
+export type RecipesList429 = { readonly "error": DailyLimitReachedErrorDetail | WeeklyLimitReachedErrorDetail }
+export const RecipesList429 = Schema.Struct({ "error": Schema.Union([DailyLimitReachedErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
 export type RecipesList500 = InternalError
 export const RecipesList500 = InternalError
 export type RecipesByIdParams = { readonly "servings"?: string, readonly "units"?: string }
@@ -180,32 +170,32 @@ export type RecipesByIdQuery = { readonly "servings"?: string, readonly "units"?
 export const RecipesByIdQuery = Schema.Struct({ "servings": Schema.optionalKey(Schema.String), "units": Schema.optionalKey(Schema.String) })
 export type RecipesById200 = { readonly "conversion"?: { readonly "system": "imperial" | "metric", readonly "unweighed": ReadonlyArray<string> }, readonly "nutritionTotals"?: NutritionTotals, readonly "recipe": Recipe }
 export const RecipesById200 = Schema.Struct({ "conversion": Schema.optionalKey(Schema.Struct({ "system": Schema.Literals(["imperial", "metric"]), "unweighed": Schema.Array(Schema.String).annotate({ "description": "Ingredients measured by volume that could not be weighed, because no density is known for them. Their lines keep the unit the source wrote them in." }) })), "nutritionTotals": Schema.optionalKey(NutritionTotals), "recipe": Recipe })
-export type RecipesById400 = HttpApiDecodeError | InvalidParameterError
-export const RecipesById400 = Schema.Union([HttpApiDecodeError, InvalidParameterError])
+export type RecipesById400 = InvalidParameterError
+export const RecipesById400 = InvalidParameterError
 export type RecipesById401 = { readonly "error": ApiKeyDisabledErrorDetail | ApiKeyExpiredErrorDetail | ApiKeyRequiredErrorDetail | InvalidApiKeyErrorDetail }
 export const RecipesById401 = Schema.Struct({ "error": Schema.Union([ApiKeyDisabledErrorDetail, ApiKeyExpiredErrorDetail, ApiKeyRequiredErrorDetail, InvalidApiKeyErrorDetail], { mode: "oneOf" }) })
 export type RecipesById404 = RecipeNotFoundError
 export const RecipesById404 = RecipeNotFoundError
-export type RecipesById429 = { readonly "error": DailyAllowanceExceededErrorDetail | DailyLimitReachedErrorDetail | WeeklyAllowanceExceededErrorDetail | WeeklyLimitReachedErrorDetail }
-export const RecipesById429 = Schema.Struct({ "error": Schema.Union([DailyAllowanceExceededErrorDetail, DailyLimitReachedErrorDetail, WeeklyAllowanceExceededErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
+export type RecipesById429 = { readonly "error": DailyLimitReachedErrorDetail | WeeklyLimitReachedErrorDetail }
+export const RecipesById429 = Schema.Struct({ "error": Schema.Union([DailyLimitReachedErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
 export type RecipesById500 = InternalError
 export const RecipesById500 = InternalError
 export type RootIndex200Text = string
 export const RootIndex200Text = Schema.String
-export type RootIndex400 = HttpApiDecodeError
-export const RootIndex400 = HttpApiDecodeError
+export type RootIndex500 = InternalError
+export const RootIndex500 = InternalError
 export type SearchSearchParams = { readonly "query": string, readonly "fields"?: string, readonly "language"?: string, readonly "limit"?: string, readonly "without"?: string }
 export const SearchSearchParams = Schema.Struct({ "query": Schema.String, "fields": Schema.optionalKey(Schema.String), "language": Schema.optionalKey(Schema.String), "limit": Schema.optionalKey(Schema.String), "without": Schema.optionalKey(Schema.String) })
 export type SearchSearchQuery = { readonly "query": string, readonly "fields"?: string, readonly "language"?: string, readonly "limit"?: string, readonly "without"?: string }
 export const SearchSearchQuery = Schema.Struct({ "query": Schema.String, "fields": Schema.optionalKey(Schema.String), "language": Schema.optionalKey(Schema.String), "limit": Schema.optionalKey(Schema.String), "without": Schema.optionalKey(Schema.String) })
 export type SearchSearch200 = { readonly "results": ReadonlyArray<SearchResult> }
 export const SearchSearch200 = Schema.Struct({ "results": Schema.Array(SearchResult) })
-export type SearchSearch400 = HttpApiDecodeError | SearchQueryRequiredError | InvalidParameterError
-export const SearchSearch400 = Schema.Union([HttpApiDecodeError, SearchQueryRequiredError, InvalidParameterError])
+export type SearchSearch400 = { readonly "error": SearchQueryRequiredErrorDetail | InvalidParameterErrorDetail }
+export const SearchSearch400 = Schema.Struct({ "error": Schema.Union([SearchQueryRequiredErrorDetail, InvalidParameterErrorDetail], { mode: "oneOf" }) })
 export type SearchSearch401 = { readonly "error": ApiKeyDisabledErrorDetail | ApiKeyExpiredErrorDetail | ApiKeyRequiredErrorDetail | InvalidApiKeyErrorDetail }
 export const SearchSearch401 = Schema.Struct({ "error": Schema.Union([ApiKeyDisabledErrorDetail, ApiKeyExpiredErrorDetail, ApiKeyRequiredErrorDetail, InvalidApiKeyErrorDetail], { mode: "oneOf" }) })
-export type SearchSearch429 = { readonly "error": DailyAllowanceExceededErrorDetail | DailyLimitReachedErrorDetail | WeeklyAllowanceExceededErrorDetail | WeeklyLimitReachedErrorDetail }
-export const SearchSearch429 = Schema.Struct({ "error": Schema.Union([DailyAllowanceExceededErrorDetail, DailyLimitReachedErrorDetail, WeeklyAllowanceExceededErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
+export type SearchSearch429 = { readonly "error": DailyLimitReachedErrorDetail | WeeklyLimitReachedErrorDetail }
+export const SearchSearch429 = Schema.Struct({ "error": Schema.Union([DailyLimitReachedErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
 export type SearchSearch500 = InternalError
 export const SearchSearch500 = InternalError
 export type ShoppingListBuildParams = { readonly "recipes": string }
@@ -214,12 +204,12 @@ export type ShoppingListBuildQuery = { readonly "recipes": string }
 export const ShoppingListBuildQuery = Schema.Struct({ "recipes": Schema.String })
 export type ShoppingListBuild200 = { readonly "items": ReadonlyArray<ShoppingItem>, readonly "recipes": ReadonlyArray<{ readonly "id": string, readonly "servings": number, readonly "title": string }> }
 export const ShoppingListBuild200 = Schema.Struct({ "items": Schema.Array(ShoppingItem), "recipes": Schema.Array(Schema.Struct({ "id": Schema.String, "servings": Schema.Finite, "title": Schema.String })) })
-export type ShoppingListBuild400 = HttpApiDecodeError | InvalidParameterError
-export const ShoppingListBuild400 = Schema.Union([HttpApiDecodeError, InvalidParameterError])
+export type ShoppingListBuild400 = InvalidParameterError
+export const ShoppingListBuild400 = InvalidParameterError
 export type ShoppingListBuild401 = { readonly "error": ApiKeyDisabledErrorDetail | ApiKeyExpiredErrorDetail | ApiKeyRequiredErrorDetail | InvalidApiKeyErrorDetail }
 export const ShoppingListBuild401 = Schema.Struct({ "error": Schema.Union([ApiKeyDisabledErrorDetail, ApiKeyExpiredErrorDetail, ApiKeyRequiredErrorDetail, InvalidApiKeyErrorDetail], { mode: "oneOf" }) })
-export type ShoppingListBuild429 = { readonly "error": DailyAllowanceExceededErrorDetail | DailyLimitReachedErrorDetail | WeeklyAllowanceExceededErrorDetail | WeeklyLimitReachedErrorDetail }
-export const ShoppingListBuild429 = Schema.Struct({ "error": Schema.Union([DailyAllowanceExceededErrorDetail, DailyLimitReachedErrorDetail, WeeklyAllowanceExceededErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
+export type ShoppingListBuild429 = { readonly "error": DailyLimitReachedErrorDetail | WeeklyLimitReachedErrorDetail }
+export const ShoppingListBuild429 = Schema.Struct({ "error": Schema.Union([DailyLimitReachedErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
 export type ShoppingListBuild500 = InternalError
 export const ShoppingListBuild500 = InternalError
 export type IngredientsListParams = { readonly "limit"?: string }
@@ -228,14 +218,14 @@ export type IngredientsListQuery = { readonly "limit"?: string }
 export const IngredientsListQuery = Schema.Struct({ "limit": Schema.optionalKey(Schema.String) })
 export type IngredientsList200 = { readonly "ingredients": ReadonlyArray<Ingredient> }
 export const IngredientsList200 = Schema.Struct({ "ingredients": Schema.Array(Ingredient) })
-export type IngredientsList400 = HttpApiDecodeError | InvalidParameterError
-export const IngredientsList400 = Schema.Union([HttpApiDecodeError, InvalidParameterError])
+export type IngredientsList400 = InvalidParameterError
+export const IngredientsList400 = InvalidParameterError
 export type IngredientsList401 = { readonly "error": ApiKeyDisabledErrorDetail | ApiKeyExpiredErrorDetail | ApiKeyRequiredErrorDetail | InvalidApiKeyErrorDetail }
 export const IngredientsList401 = Schema.Struct({ "error": Schema.Union([ApiKeyDisabledErrorDetail, ApiKeyExpiredErrorDetail, ApiKeyRequiredErrorDetail, InvalidApiKeyErrorDetail], { mode: "oneOf" }) })
 export type IngredientsList403 = BusinessPlanRequiredError
 export const IngredientsList403 = BusinessPlanRequiredError
-export type IngredientsList429 = { readonly "error": DailyAllowanceExceededErrorDetail | DailyLimitReachedErrorDetail | WeeklyAllowanceExceededErrorDetail | WeeklyLimitReachedErrorDetail }
-export const IngredientsList429 = Schema.Struct({ "error": Schema.Union([DailyAllowanceExceededErrorDetail, DailyLimitReachedErrorDetail, WeeklyAllowanceExceededErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
+export type IngredientsList429 = { readonly "error": DailyLimitReachedErrorDetail | WeeklyLimitReachedErrorDetail }
+export const IngredientsList429 = Schema.Struct({ "error": Schema.Union([DailyLimitReachedErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
 export type IngredientsList500 = InternalError
 export const IngredientsList500 = InternalError
 export type IngredientsResolveParams = { readonly "names": string }
@@ -244,26 +234,24 @@ export type IngredientsResolveQuery = { readonly "names": string }
 export const IngredientsResolveQuery = Schema.Struct({ "names": Schema.String })
 export type IngredientsResolve200 = { readonly "ingredients": ReadonlyArray<ResolvedIngredient>, readonly "unknown": ReadonlyArray<string> }
 export const IngredientsResolve200 = Schema.Struct({ "ingredients": Schema.Array(ResolvedIngredient), "unknown": Schema.Array(Schema.String).annotate({ "description": "The names that match no ingredient. Nothing is guessed for them." }) })
-export type IngredientsResolve400 = HttpApiDecodeError | InvalidParameterError
-export const IngredientsResolve400 = Schema.Union([HttpApiDecodeError, InvalidParameterError])
+export type IngredientsResolve400 = InvalidParameterError
+export const IngredientsResolve400 = InvalidParameterError
 export type IngredientsResolve401 = { readonly "error": ApiKeyDisabledErrorDetail | ApiKeyExpiredErrorDetail | ApiKeyRequiredErrorDetail | InvalidApiKeyErrorDetail }
 export const IngredientsResolve401 = Schema.Struct({ "error": Schema.Union([ApiKeyDisabledErrorDetail, ApiKeyExpiredErrorDetail, ApiKeyRequiredErrorDetail, InvalidApiKeyErrorDetail], { mode: "oneOf" }) })
-export type IngredientsResolve429 = { readonly "error": DailyAllowanceExceededErrorDetail | DailyLimitReachedErrorDetail | WeeklyAllowanceExceededErrorDetail | WeeklyLimitReachedErrorDetail }
-export const IngredientsResolve429 = Schema.Struct({ "error": Schema.Union([DailyAllowanceExceededErrorDetail, DailyLimitReachedErrorDetail, WeeklyAllowanceExceededErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
+export type IngredientsResolve429 = { readonly "error": DailyLimitReachedErrorDetail | WeeklyLimitReachedErrorDetail }
+export const IngredientsResolve429 = Schema.Struct({ "error": Schema.Union([DailyLimitReachedErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
 export type IngredientsResolve500 = InternalError
 export const IngredientsResolve500 = InternalError
 export type IngredientsByIdPathParams = { readonly "id": string }
 export const IngredientsByIdPathParams = Schema.Struct({ "id": Schema.String })
 export type IngredientsById200 = { readonly "ingredient": IngredientDetail }
 export const IngredientsById200 = Schema.Struct({ "ingredient": IngredientDetail })
-export type IngredientsById400 = HttpApiDecodeError
-export const IngredientsById400 = HttpApiDecodeError
 export type IngredientsById401 = { readonly "error": ApiKeyDisabledErrorDetail | ApiKeyExpiredErrorDetail | ApiKeyRequiredErrorDetail | InvalidApiKeyErrorDetail }
 export const IngredientsById401 = Schema.Struct({ "error": Schema.Union([ApiKeyDisabledErrorDetail, ApiKeyExpiredErrorDetail, ApiKeyRequiredErrorDetail, InvalidApiKeyErrorDetail], { mode: "oneOf" }) })
 export type IngredientsById404 = IngredientNotFoundError
 export const IngredientsById404 = IngredientNotFoundError
-export type IngredientsById429 = { readonly "error": DailyAllowanceExceededErrorDetail | DailyLimitReachedErrorDetail | WeeklyAllowanceExceededErrorDetail | WeeklyLimitReachedErrorDetail }
-export const IngredientsById429 = Schema.Struct({ "error": Schema.Union([DailyAllowanceExceededErrorDetail, DailyLimitReachedErrorDetail, WeeklyAllowanceExceededErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
+export type IngredientsById429 = { readonly "error": DailyLimitReachedErrorDetail | WeeklyLimitReachedErrorDetail }
+export const IngredientsById429 = Schema.Struct({ "error": Schema.Union([DailyLimitReachedErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
 export type IngredientsById500 = InternalError
 export const IngredientsById500 = InternalError
 export type IngredientsPairingsParams = { readonly "limit"?: string, readonly "staples"?: string }
@@ -274,32 +262,30 @@ export type IngredientsPairingsQuery = { readonly "limit"?: string, readonly "st
 export const IngredientsPairingsQuery = Schema.Struct({ "limit": Schema.optionalKey(Schema.String), "staples": Schema.optionalKey(Schema.String) })
 export type IngredientsPairings200 = { readonly "ingredient": { readonly "id": string, readonly "name": string }, readonly "pairings": ReadonlyArray<IngredientPairing>, readonly "recipeCount": number }
 export const IngredientsPairings200 = Schema.Struct({ "ingredient": Schema.Struct({ "id": Schema.String.annotate({ "description": "The canonical id." }), "name": Schema.String.annotate({ "description": "The canonical English name." }) }), "pairings": Schema.Array(IngredientPairing).annotate({ "description": "The ingredients used with it, most often first." }), "recipeCount": Schema.Number.annotate({ "description": "How many recipes using the ingredient were read, at most 5,000. `share` is a fraction of this." }).check(Schema.isFinite().annotate({ "expected": "a finite number" })) })
-export type IngredientsPairings400 = HttpApiDecodeError | InvalidParameterError
-export const IngredientsPairings400 = Schema.Union([HttpApiDecodeError, InvalidParameterError])
+export type IngredientsPairings400 = InvalidParameterError
+export const IngredientsPairings400 = InvalidParameterError
 export type IngredientsPairings401 = { readonly "error": ApiKeyDisabledErrorDetail | ApiKeyExpiredErrorDetail | ApiKeyRequiredErrorDetail | InvalidApiKeyErrorDetail }
 export const IngredientsPairings401 = Schema.Struct({ "error": Schema.Union([ApiKeyDisabledErrorDetail, ApiKeyExpiredErrorDetail, ApiKeyRequiredErrorDetail, InvalidApiKeyErrorDetail], { mode: "oneOf" }) })
 export type IngredientsPairings404 = IngredientNotFoundError
 export const IngredientsPairings404 = IngredientNotFoundError
-export type IngredientsPairings429 = { readonly "error": DailyAllowanceExceededErrorDetail | DailyLimitReachedErrorDetail | WeeklyAllowanceExceededErrorDetail | WeeklyLimitReachedErrorDetail }
-export const IngredientsPairings429 = Schema.Struct({ "error": Schema.Union([DailyAllowanceExceededErrorDetail, DailyLimitReachedErrorDetail, WeeklyAllowanceExceededErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
+export type IngredientsPairings429 = { readonly "error": DailyLimitReachedErrorDetail | WeeklyLimitReachedErrorDetail }
+export const IngredientsPairings429 = Schema.Struct({ "error": Schema.Union([DailyLimitReachedErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
 export type IngredientsPairings500 = InternalError
 export const IngredientsPairings500 = InternalError
 export type IngredientsVocabularies200 = { readonly "allergens": ReadonlyArray<{ readonly "feature": RegulatedAllergenFeature, readonly "jurisdictions": ReadonlyArray<"eu" | "us"> }>, readonly "courses": ReadonlyArray<string>, readonly "cuisines": ReadonlyArray<string>, readonly "diets": ReadonlyArray<string>, readonly "units": ReadonlyArray<string> }
 export const IngredientsVocabularies200 = Schema.Struct({ "allergens": Schema.Array(Schema.Struct({ "feature": RegulatedAllergenFeature, "jurisdictions": Schema.Array(Schema.Literals(["eu", "us"])) })), "courses": Schema.Array(Schema.String), "cuisines": Schema.Array(Schema.String), "diets": Schema.Array(Schema.String), "units": Schema.Array(Schema.String) }).annotate({ "description": "The closed vocabularies recipes are classified with. Use these values in the list filters." })
-export type IngredientsVocabularies400 = HttpApiDecodeError
-export const IngredientsVocabularies400 = HttpApiDecodeError
 export type IngredientsVocabularies401 = { readonly "error": ApiKeyDisabledErrorDetail | ApiKeyExpiredErrorDetail | ApiKeyRequiredErrorDetail | InvalidApiKeyErrorDetail }
 export const IngredientsVocabularies401 = Schema.Struct({ "error": Schema.Union([ApiKeyDisabledErrorDetail, ApiKeyExpiredErrorDetail, ApiKeyRequiredErrorDetail, InvalidApiKeyErrorDetail], { mode: "oneOf" }) })
-export type IngredientsVocabularies429 = { readonly "error": DailyAllowanceExceededErrorDetail | DailyLimitReachedErrorDetail | WeeklyAllowanceExceededErrorDetail | WeeklyLimitReachedErrorDetail }
-export const IngredientsVocabularies429 = Schema.Struct({ "error": Schema.Union([DailyAllowanceExceededErrorDetail, DailyLimitReachedErrorDetail, WeeklyAllowanceExceededErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
+export type IngredientsVocabularies429 = { readonly "error": DailyLimitReachedErrorDetail | WeeklyLimitReachedErrorDetail }
+export const IngredientsVocabularies429 = Schema.Struct({ "error": Schema.Union([DailyLimitReachedErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
+export type IngredientsVocabularies500 = InternalError
+export const IngredientsVocabularies500 = InternalError
 export type StatusRead200 = { readonly "pages": PageStatusCounts, readonly "recipes": number, readonly "sites": number }
 export const StatusRead200 = Schema.Struct({ "pages": PageStatusCounts, "recipes": Schema.Finite, "sites": Schema.Finite })
-export type StatusRead400 = HttpApiDecodeError
-export const StatusRead400 = HttpApiDecodeError
 export type StatusRead401 = { readonly "error": ApiKeyDisabledErrorDetail | ApiKeyExpiredErrorDetail | ApiKeyRequiredErrorDetail | InvalidApiKeyErrorDetail }
 export const StatusRead401 = Schema.Struct({ "error": Schema.Union([ApiKeyDisabledErrorDetail, ApiKeyExpiredErrorDetail, ApiKeyRequiredErrorDetail, InvalidApiKeyErrorDetail], { mode: "oneOf" }) })
-export type StatusRead429 = { readonly "error": DailyAllowanceExceededErrorDetail | DailyLimitReachedErrorDetail | WeeklyAllowanceExceededErrorDetail | WeeklyLimitReachedErrorDetail }
-export const StatusRead429 = Schema.Struct({ "error": Schema.Union([DailyAllowanceExceededErrorDetail, DailyLimitReachedErrorDetail, WeeklyAllowanceExceededErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
+export type StatusRead429 = { readonly "error": DailyLimitReachedErrorDetail | WeeklyLimitReachedErrorDetail }
+export const StatusRead429 = Schema.Struct({ "error": Schema.Union([DailyLimitReachedErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
 export type StatusRead500 = InternalError
 export const StatusRead500 = InternalError
 export type SubstitutionsListParams = { readonly "ingredients": string }
@@ -308,19 +294,19 @@ export type SubstitutionsListQuery = { readonly "ingredients": string }
 export const SubstitutionsListQuery = Schema.Struct({ "ingredients": Schema.String })
 export type SubstitutionsList200 = { readonly "substitutions": ReadonlyArray<{ readonly "ingredient": string, readonly "options": ReadonlyArray<Substitution> }>, readonly "unknown": ReadonlyArray<string> }
 export const SubstitutionsList200 = Schema.Struct({ "substitutions": Schema.Array(Schema.Struct({ "ingredient": Schema.String, "options": Schema.Array(Substitution) })), "unknown": Schema.Array(Schema.String).annotate({ "description": "The ingredients asked about that nothing is known to substitute for. Nothing is suggested for them, rather than something plausible that would not work." }) })
-export type SubstitutionsList400 = HttpApiDecodeError | InvalidParameterError
-export const SubstitutionsList400 = Schema.Union([HttpApiDecodeError, InvalidParameterError])
+export type SubstitutionsList400 = InvalidParameterError
+export const SubstitutionsList400 = InvalidParameterError
 export type SubstitutionsList401 = { readonly "error": ApiKeyDisabledErrorDetail | ApiKeyExpiredErrorDetail | ApiKeyRequiredErrorDetail | InvalidApiKeyErrorDetail }
 export const SubstitutionsList401 = Schema.Struct({ "error": Schema.Union([ApiKeyDisabledErrorDetail, ApiKeyExpiredErrorDetail, ApiKeyRequiredErrorDetail, InvalidApiKeyErrorDetail], { mode: "oneOf" }) })
-export type SubstitutionsList429 = { readonly "error": DailyAllowanceExceededErrorDetail | DailyLimitReachedErrorDetail | WeeklyAllowanceExceededErrorDetail | WeeklyLimitReachedErrorDetail }
-export const SubstitutionsList429 = Schema.Struct({ "error": Schema.Union([DailyAllowanceExceededErrorDetail, DailyLimitReachedErrorDetail, WeeklyAllowanceExceededErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
+export type SubstitutionsList429 = { readonly "error": DailyLimitReachedErrorDetail | WeeklyLimitReachedErrorDetail }
+export const SubstitutionsList429 = Schema.Struct({ "error": Schema.Union([DailyLimitReachedErrorDetail, WeeklyLimitReachedErrorDetail], { mode: "oneOf" }) })
 export type SubstitutionsList500 = InternalError
 export const SubstitutionsList500 = InternalError
 
 export const BearerAuthSecurity = HttpApiSecurity.bearer
 
 class HealthGroup extends HttpApiGroup.make("health")
-  .add(HttpApiEndpoint.get("healthCheck", "/health", { success: HealthCheck200, error: HealthCheck400.pipe(HttpApiSchema.status(400)) })
+  .add(HttpApiEndpoint.get("healthCheck", "/health", { success: HealthCheck200, error: HealthCheck500 })
       .annotate(OpenApi.Identifier, "health.check")
       .annotate(OpenApi.Description, "Health check that verifies the API is running. It also reports the short sha of the commit the process was built from and when it started, so a deployment can be told apart from the one before it.")) {}
 
@@ -331,7 +317,7 @@ class PantryGroup extends HttpApiGroup.make("pantry")
       .annotate(OpenApi.Description, "What you can cook from what you have. `ingredients` is the pantry: 1 to 20 comma-separated ingredient names or canonical ids. A name can be in any language the recipes are in, so \"kyckling\" works as well as \"chicken\", and a food covers its cuts and kinds: \"chicken\" covers chicken breast and \"onion\" covers red onion, but not chicken broth or onion powder. Only recipes that use at least one of them are returned, best covered first, and each carries the pantry ingredients it uses and the ingredients you are missing. Salt, pepper, water, oil, sugar and flour are taken as already in the kitchen: they are reported in `assumedIngredients` and left out of the coverage and of `missingIngredients`. Send `staples=false` to count them as ingredients you need. `maxMissing` narrows the results to recipes you are short no more than that many ingredients for — `maxMissing=0` is what you can cook right now. `without` leaves out recipes that contain any of the listed allergen features from /vocabularies, such as \"milk,peanuts\"; it is informational, not medical advice.")) {}
 
 class PopularGroup extends HttpApiGroup.make("popular")
-  .add(HttpApiEndpoint.get("popularList", "/popular", { query: PopularListQuery, success: PopularList200, error: [PopularList400.pipe(HttpApiSchema.status(400)), PopularList401.pipe(HttpApiSchema.status(401)), PopularList429.pipe(HttpApiSchema.status(429)), PopularList500] })
+  .add(HttpApiEndpoint.get("popularList", "/popular", { query: PopularListQuery, success: PopularList200, error: [PopularList401.pipe(HttpApiSchema.status(401)), PopularList429.pipe(HttpApiSchema.status(429)), PopularList500] })
       .annotate(OpenApi.Identifier, "popular.list")
       .annotate(OpenApi.Description, "The most popular recipes first. Ranking favours recipes that are both well rated and rated by a lot of people, so a single five-star review will not outrank a long-standing favourite.")) {}
 
@@ -345,7 +331,7 @@ class RecipesGroup extends HttpApiGroup.make("recipes")
       .annotate(OpenApi.Description, "Retrieve a single recipe by its id. `servings` rewrites every quantity for that many servings: ranges scale with them, an ingredient with no quantity is left alone, and `original` still holds the line the source published. Per-serving nutrition does not change, because more servings of the same food is the same plate. `units` rewrites the recipe in metric or imperial units, converting oven temperatures too and weighing a volume when the density of the ingredient is known; a volume it cannot weigh keeps the unit the source wrote it in and is named in `conversion.unweighed`. Amounts are rounded once, at the end, the way a cook would write them: grams and millilitres to a step a scale can read, spoons and cups to the fractions they are marked in, and countable things such as cloves to halves.")) {}
 
 class RootGroup extends HttpApiGroup.make("root")
-  .add(HttpApiEndpoint.get("rootIndex", "/", { success: RootIndex200Text.pipe(HttpApiSchema.asText()), error: RootIndex400.pipe(HttpApiSchema.status(400)) })
+  .add(HttpApiEndpoint.get("rootIndex", "/", { success: RootIndex200Text.pipe(HttpApiSchema.asText()), error: RootIndex500 })
       .annotate(OpenApi.Identifier, "root.index")
       .annotate(OpenApi.Description, "What this API is and where to read about it, as plain text. Needs no API key.")) {}
 
@@ -368,19 +354,19 @@ class IngredientsGroup extends HttpApiGroup.make("ingredients")
       .annotate(OpenApi.Identifier, "ingredients.resolve")
       .annotate(OpenApi.Summary, "Canonical ids for ingredient names, in any language.")
       .annotate(OpenApi.Description, "Turns ingredient names into canonical ids. `names` is a comma-separated list of names as a cook or a recipe writes them. A name matches its own id or canonical spelling first (\"scallions\" is spring-onion), then any spelling the vocabulary has seen in any language (\"heavy cream\", \"vispgrädde\"), and only then the food it is a kind of (\"fresh cilantro\" is cilantro). Names that match nothing come back in `unknown` rather than with a plausible guess."), 
-    HttpApiEndpoint.get("ingredientsById", "/ingredients/:id", { params: IngredientsByIdPathParams, success: IngredientsById200, error: [IngredientsById400.pipe(HttpApiSchema.status(400)), IngredientsById401.pipe(HttpApiSchema.status(401)), IngredientsById404.pipe(HttpApiSchema.status(404)), IngredientsById429.pipe(HttpApiSchema.status(429)), IngredientsById500] })
+    HttpApiEndpoint.get("ingredientsById", "/ingredients/:id", { params: IngredientsByIdPathParams, success: IngredientsById200, error: [IngredientsById401.pipe(HttpApiSchema.status(401)), IngredientsById404.pipe(HttpApiSchema.status(404)), IngredientsById429.pipe(HttpApiSchema.status(429)), IngredientsById500] })
       .annotate(OpenApi.Identifier, "ingredients.byId")
       .annotate(OpenApi.Description, "Retrieve a single ingredient by its canonical id. Use /ingredients/resolve to turn a name into one. Carries the regulated allergen features and diets once the ingredient has been classified (informational, not medical advice), the substitutions /substitutions gives, the density in grams per millilitre when it is well established, whether it pours, whether a kitchen is assumed to have it, and the food it is a kind or part of."), 
     HttpApiEndpoint.get("ingredientsPairings", "/ingredients/:id/pairings", { params: IngredientsPairingsPathParams, query: IngredientsPairingsQuery, success: IngredientsPairings200, error: [IngredientsPairings400.pipe(HttpApiSchema.status(400)), IngredientsPairings401.pipe(HttpApiSchema.status(401)), IngredientsPairings404.pipe(HttpApiSchema.status(404)), IngredientsPairings429.pipe(HttpApiSchema.status(429)), IngredientsPairings500] })
       .annotate(OpenApi.Identifier, "ingredients.pairings")
       .annotate(OpenApi.Summary, "What an ingredient is most often cooked with.")
       .annotate(OpenApi.Description, "The ingredients that recipes most often use together with this one, counted from the recipes the API serves, for \"what goes with X\" or to fill in a dish. Each pairing says in how many of the ingredient's recipes it appears and what share of them that is. Salt, pepper, oil, sugar, flour and water are left out unless `staples=true`. `limit` takes 1 to 50 and defaults to 20."), 
-    HttpApiEndpoint.get("ingredientsVocabularies", "/vocabularies", { success: IngredientsVocabularies200, error: [IngredientsVocabularies400.pipe(HttpApiSchema.status(400)), IngredientsVocabularies401.pipe(HttpApiSchema.status(401)), IngredientsVocabularies429.pipe(HttpApiSchema.status(429))] })
+    HttpApiEndpoint.get("ingredientsVocabularies", "/vocabularies", { success: IngredientsVocabularies200, error: [IngredientsVocabularies401.pipe(HttpApiSchema.status(401)), IngredientsVocabularies429.pipe(HttpApiSchema.status(429)), IngredientsVocabularies500] })
       .annotate(OpenApi.Identifier, "ingredients.vocabularies")
       .annotate(OpenApi.Description, "The closed lists recipes are classified with: cuisines, courses, diets, EU and US regulated allergen features, and units.")) {}
 
 class StatusGroup extends HttpApiGroup.make("status")
-  .add(HttpApiEndpoint.get("statusRead", "/status", { success: StatusRead200, error: [StatusRead400.pipe(HttpApiSchema.status(400)), StatusRead401.pipe(HttpApiSchema.status(401)), StatusRead429.pipe(HttpApiSchema.status(429)), StatusRead500] })
+  .add(HttpApiEndpoint.get("statusRead", "/status", { success: StatusRead200, error: [StatusRead401.pipe(HttpApiSchema.status(401)), StatusRead429.pipe(HttpApiSchema.status(429)), StatusRead500] })
       .annotate(OpenApi.Identifier, "status.read")
       .annotate(OpenApi.Description, "How much data the API is serving: the number of recipes and sites available, and how far collection has progressed across the pages they came from.")) {}
 

@@ -71,9 +71,9 @@ Effect.runPromise(Effect.provide(program, layer))
 | --- | --- | --- |
 | `AuthenticationError` | The API key is missing, wrong, expired or disabled. | No |
 | `PlanRequiredError` | The endpoint needs a business plan (`recipes.list`, `ingredients.list`). | No |
-| `RateLimitError` | The account has used its daily or weekly requests. `window` says which. | No |
+| `RateLimitError` | The account has used its daily or weekly requests. `window` says which. `retryAfter` is the number of seconds until the next midnight UTC, when the limit frees up. | No |
 | `NotFoundError` | The recipe or ingredient doesn't exist. | No |
-| `InvalidRequestError` | A parameter is missing or invalid. `issues` lists what was wrong. | No |
+| `InvalidRequestError` | A parameter is missing or invalid. The message says which. | No |
 | `InternalError` | Something failed on the Tiny Plates side. | Yes |
 | `ConnectionError` | The request timed out (`timeout`) or never reached the API (`network_error`). | Yes |
 | `UnexpectedResponseError` | The API answered with something the client doesn't recognise. | No |
@@ -90,4 +90,4 @@ bun run typecheck
 bun test
 ```
 
-`openapi.json` is a committed snapshot of https://api.tinyplates.dev/openapi.json. `scripts/openapi-patch.json` works around a part of the spec that the generator can't read (the `patternProperties` on `Nutrition.micronutrients`).
+`openapi.json` is a committed snapshot of https://api.tinyplates.dev/openapi.json.

@@ -11,8 +11,8 @@ import {
 
 type Reply = Response | ((signal: AbortSignal) => Promise<Response>)
 
-function json(status: number, body: unknown) {
-  return new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' }, status })
+function json(status: number, body: unknown, headers: Record<string, string> = {}) {
+  return new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json', ...headers }, status })
 }
 
 // A fetch that answers with the given replies in order and records each request.
@@ -128,7 +128,7 @@ describe('createClient', () => {
   })
 
   test('does not retry rate limits', async () => {
-    const { fetch, requests } = mockFetch(json(429, { error: { code: 'daily_limit_reached', message: 'You have used today\'s requests.' } }))
+    const { fetch, requests } = mockFetch(json(429, { error: { code: 'daily_limit_reached', message: 'You have used today\'s requests.' } }, { 'retry-after': '3600' }))
     const client = createClient({ apiKey: 'key', fetch })
 
     const error = await client.popular.list().catch((error: unknown) => {
@@ -136,7 +136,7 @@ describe('createClient', () => {
     })
 
     expect(error).toBeInstanceOf(RateLimitError)
-    expect(error).toMatchObject({ code: 'daily_limit_reached', status: 429, window: 'daily' })
+    expect(error).toMatchObject({ code: 'daily_limit_reached', retryAfter: 3600, status: 429, window: 'daily' })
     expect(requests.length).toEqual(1)
   })
 
